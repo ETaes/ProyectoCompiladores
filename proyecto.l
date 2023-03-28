@@ -1,9 +1,12 @@
 %{
 /* Primer Programa: Analizador Lexico
 */
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include<stdlib.h>
+#include <string.h>
 int count = 0;
 
 #define IDENTIFICADORES                    0
@@ -42,15 +45,15 @@ ident {letrasMinusculas}{letrasMinusculas}({guionBajo}|{letrasMinusculas})*
 
 %%
 {digblank} {printf("espacio en blanco\n");}
-{consEntera} {printf("%s es una constante entera\n", yytext);}
-{consNumReales} {printf("%s es una constante numerica real\n", yytext);}
-{consCaracter} {printf("%s es una constante caracter\n", yytext);}
-{consCadena} {printf("%s es una constante cadena\n", yytext);}
-{opArit} {printf("%s es un operador aritmetico\n", yytext);}
-{palRes} {printf("%s es una palabra reservada\n", yytext);}
-{opRelacionales} {printf("%s es un operador relacional\n", yytext);}
-{simEspeciales} {printf("%s es un simbolo especial\n", yytext);}
-{ident} {printf("%s es un identificador\n", yytext);}
+{consEntera} {return CONSTANTE_NUMERICA_ENTERA;}
+{consNumReales} {return CONSTANTE_NUMERICA_REAL;}
+{consCaracter} {return CONSTANTE_CARACTER;}
+{consCadena} {return CONSTANTE_CADENA;}
+{opArit} {return OPERADOR_ARITMETICOS;}
+{palRes} {return PALABRA_RESERVADA;}
+{opRelacionales} {return OPERADORES_RELACIONALES;}
+{simEspeciales} {return SIMBOLOS_ESPECIALES;}
+{ident} {return IDENTIFICADORES;}
 
 . {printf("%s No se ha podido identificar su tipo\n", yytext);}
 %%
@@ -181,7 +184,7 @@ void imprimeContenido(nodoL *inicio, int constanteValor) {
         switch (constanteValor)
         {
         case 0:
-            printf("Valor de cadena actual. %s, %d\n", auxiliar->datoU.identValorU.cadena_ts,auxiliar->datoU.identValorU.posValor);
+            printf("Valor de identificador. %s, %d\n", auxiliar->datoU.identValorU.cadena_ts,auxiliar->datoU.identValorU.posValor);
             break;
         case 1:
             printf("Valor de cadena actual. %c, %d\n", auxiliar->datoU.carValorU.simbolo,auxiliar->datoU.carValorU.valor);
@@ -245,7 +248,7 @@ void crearInformacion(int TablaT, nodoL** tablaTokens, nodoL** tablaIdentificado
 
     switch (TablaT){
     case IDENTIFICADORES:
-        auxiliar.identValorU.cadena_ts = yytext;
+        auxiliar.identValorU.cadena_ts = strdup(yytext);
         auxiliar.identValorU.posValor = contadoresTIdentificador;
         //Incrementa el valor para el nuevo elementro de la tabla
         
@@ -377,24 +380,49 @@ main (int argc, char * argv[])
     //nodoL *tablaCaracteres = NULL;
     nodoL *tablaConstantesReales = NULL;
 
+/*
+ESTO ES PARA ABRIR ARCHIVOS
+*/
 
 int res,c;
 yyin = fopen(argv[1],"r");
+
 //archSal = fopen("salida.txt","w");
 res = yylex();
+printf("%d \n", res);
 
 //fclose(archSal);
-while (1)
-{
-    crearInformacion(res,&tablaTokens,&tablaIdentificadores,&tablaConstantesEnteras,&tablaCadenas,&tablaConstantesReales);
+while (!feof(yyin)) {
+    //crearInformacion(res,&tablaTokens,&tablaIdentificadores,&tablaConstantesEnteras,&tablaCadenas,&tablaConstantesReales);
     res = yylex();
-    if ((c = fgetc(yyin)) == EOF){
-      break;
-    }
-
+   printf("%d \n", res);
+   printf("Resultado %d", c);
 }
+
+
+//fclose(argv[1]);/*
+//yyin = fopen(argv[1],"r");
+//int res = yylex();
+/*
+printf("%d \n", res);
+crearInformacion(0,&tablaTokens,&tablaIdentificadores,&tablaConstantesEnteras,&tablaCadenas,&tablaConstantesReales);
+ res = yylex();
+crearInformacion(0,&tablaTokens,&tablaIdentificadores,&tablaConstantesEnteras,&tablaCadenas,&tablaConstantesReales);
+ res = yylex();
+crearInformacion(0,&tablaTokens,&tablaIdentificadores,&tablaConstantesEnteras,&tablaCadenas,&tablaConstantesReales);
+res = yylex();
+crearInformacion(0,&tablaTokens,&tablaIdentificadores,&tablaConstantesEnteras,&tablaCadenas,&tablaConstantesReales);
+res = yylex();
+crearInformacion(0,&tablaTokens,&tablaIdentificadores,&tablaConstantesEnteras,&tablaCadenas,&tablaConstantesReales);
+    */
 //printf("Llegue a este punto");
-imprimeContenido(tablaConstantesEnteras, 6);
+imprimeContenido(tablaIdentificadores, 0);
+fclose(yyin);
+
+//imprimeContenido(tablaConstantesEnteras, 6);
+//imprimeContenido(tablaConstantesReales, 9);
+//imprimeContenido(tablaCadenas, 7);
+
 /*
     //Pruebas
     nodoL *comienzo = NULL;
@@ -425,35 +453,3 @@ imprimeContenido(tablaConstantesEnteras, 6);
     return 0;
 }
 
-/*
-%{
-#include <stdio.h>
-%}
-
-
-.   { /* do nothing for any character }
-
-int main(int argc, char** argv) {
-    if (argc < 2) {
-        printf("Usage: %s <filename>\n", argv[0]);
-        return 1;
-    }
-
-    FILE* fp = fopen(argv[1], "r");
-    if (fp == NULL) {
-        printf("Failed to open file %s\n", argv[1]);
-        return 1;
-    }
-
-    yyin = fp;
-
-    int c;
-    while ((c = fgetc(yyin)) != EOF) {
-        /* do something with the character 
-        printf("%c", c);
-    }
-
-    fclose(fp);
-    return 0;
-}
-*/
