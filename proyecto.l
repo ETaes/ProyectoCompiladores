@@ -18,7 +18,7 @@ int count = 0;
 #define CONSTANTE_NUMERICA_REAL            9
 
 %}
-digblank [\t\n]     /* Ignorar Los espacios en blanco */
+digblank [\t\n ]     
 palRes ent|finsi|haz|mientras|large|para|real|regresa|si|simb|sino
 simEspeciales [\(\)\{\}\;\,\[\]]
 digOctal [0-7]
@@ -41,17 +41,18 @@ opRelacionales "="|"/="|">="|"<"|">"|"<="
 ident {letrasMinusculas}{letrasMinusculas}({guionBajo}|{letrasMinusculas})*
 
 %%
-{consEntera} {return CONSTANTE_NUMERICA_ENTERA;}
-{consNumReales} {return CONSTANTE_NUMERICA_REAL;}
-{consCaracter} {return CONSTANTE_CARACTER;}
-{consCadena} {return CONSTANTE_CADENA;}
-{opArit} {return OPERADOR_ARITMETICOS;}
-{palRes} {return PALABRA_RESERVADA;}
-{opRelacionales} {return OPERADORES_RELACIONALES;}
-{simEspeciales} {return SIMBOLOS_ESPECIALES;}
-{ident} {return IDENTIFICADORES;}
+{digblank} {printf("espacio en blanco\n");}
+{consEntera} {printf("%s es una constante entera\n", yytext);}
+{consNumReales} {printf("%s es una constante numerica real\n", yytext);}
+{consCaracter} {printf("%s es una constante caracter\n", yytext);}
+{consCadena} {printf("%s es una constante cadena\n", yytext);}
+{opArit} {printf("%s es un operador aritmetico\n", yytext);}
+{palRes} {printf("%s es una palabra reservada\n", yytext);}
+{opRelacionales} {printf("%s es un operador relacional\n", yytext);}
+{simEspeciales} {printf("%s es un simbolo especial\n", yytext);}
+{ident} {printf("%s es un identificador\n", yytext);}
 
-. {printf("No se ha podido identificar su tipo\n");}
+. {printf("%s No se ha podido identificar su tipo\n", yytext);}
 %%
 
 
@@ -377,20 +378,24 @@ main (int argc, char * argv[])
     nodoL *tablaConstantesReales = NULL;
 
 
-int res;
+int res,c;
 yyin = fopen(argv[1],"r");
 //archSal = fopen("salida.txt","w");
 res = yylex();
 
 //fclose(archSal);
-while (res)
+while (1)
 {
     crearInformacion(res,&tablaTokens,&tablaIdentificadores,&tablaConstantesEnteras,&tablaCadenas,&tablaConstantesReales);
     res = yylex();
-}
-printf("Llegue a este punto");
-imprimeContenido(tablaIdentificadores, 0);
+    if ((c = fgetc(yyin)) == EOF){
+      break;
+    }
 
+}
+//printf("Llegue a este punto");
+imprimeContenido(tablaConstantesEnteras, 6);
+/*
     //Pruebas
     nodoL *comienzo = NULL;
     union datos prueba1;
@@ -416,6 +421,39 @@ imprimeContenido(tablaIdentificadores, 0);
     
     //borrar(&comienzo);
     //free(comienzo);
-    
+    */
     return 0;
 }
+
+/*
+%{
+#include <stdio.h>
+%}
+
+
+.   { /* do nothing for any character }
+
+int main(int argc, char** argv) {
+    if (argc < 2) {
+        printf("Usage: %s <filename>\n", argv[0]);
+        return 1;
+    }
+
+    FILE* fp = fopen(argv[1], "r");
+    if (fp == NULL) {
+        printf("Failed to open file %s\n", argv[1]);
+        return 1;
+    }
+
+    yyin = fp;
+
+    int c;
+    while ((c = fgetc(yyin)) != EOF) {
+        /* do something with the character 
+        printf("%c", c);
+    }
+
+    fclose(fp);
+    return 0;
+}
+*/
