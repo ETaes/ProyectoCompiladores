@@ -6,8 +6,9 @@
 #include <stdio.h>
 #include<stdlib.h>
 #include <string.h>
-//int count = 0;
 
+//La constante IDENTIFICADOR tomara un valor de 10 en vez de 0 debido a en caso de presentarse un identificador dentro del archivo la funcion yylex retornara 0
+//Debido a que C toma al 0 como una negacion y hacmos uso de la salida de yylex como condicion del ciclo do-while que permite la lectura del archivo fue necesario cambiar su valor   
 #define IDENTIFICADORES                    10 
 #define SIMBOLOS_ESPECIALES                1
 #define OPERADORES_RELACIONALES            2
