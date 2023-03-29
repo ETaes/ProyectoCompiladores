@@ -9,7 +9,7 @@
 #include <string.h>
 int count = 0;
 
-#define IDENTIFICADORES                    0
+#define IDENTIFICADORES                    10 
 #define SIMBOLOS_ESPECIALES                1
 #define OPERADORES_RELACIONALES            2
 #define OPERADORES_ASIGNACION              3
@@ -42,20 +42,22 @@ consCadena \"(.)*\"
 opArit "+"|"-"|"*"|"/"|"%"
 opRelacionales "="|"/="|">="|"<"|">"|"<="
 ident {letrasMinusculas}{letrasMinusculas}({guionBajo}|{letrasMinusculas})*
+opAsignacion "->"
 
 %%
-{digblank} {printf("espacio en blanco\n");}
+{digblank} {return 11;}
 {consEntera} {return CONSTANTE_NUMERICA_ENTERA;}
 {consNumReales} {return CONSTANTE_NUMERICA_REAL;}
 {consCaracter} {return CONSTANTE_CARACTER;}
 {consCadena} {return CONSTANTE_CADENA;}
+{opAsignacion} {return OPERADORES_ASIGNACION;}
 {opArit} {return OPERADOR_ARITMETICOS;}
 {palRes} {return PALABRA_RESERVADA;}
 {opRelacionales} {return OPERADORES_RELACIONALES;}
 {simEspeciales} {return SIMBOLOS_ESPECIALES;}
 {ident} {return IDENTIFICADORES;}
 
-. {printf("%s No se ha podido identificar su tipo\n", yytext);}
+. {return 11;}
 %%
 
 
@@ -63,7 +65,6 @@ ident {letrasMinusculas}{letrasMinusculas}({guionBajo}|{letrasMinusculas})*
 union datosToken{
    int valEntero;
    char valCaracter;
-   char *valCadena;
 };
 
 
@@ -133,14 +134,7 @@ int contadoresTNumEntero = 0;
 
 
 
-/*
-void borrar (identificador *p)
-{
-   if (p->anterior != NULL)
-	p->anterior->siguiente = p->siguiente;
-   free(p);
-}*/
-/*Crear */
+
 
 nodoL *crear(union datos dato){
     nodoL *puntero = malloc(sizeof(nodoL));
@@ -165,61 +159,89 @@ void insercion(nodoL** inicio, union datos dato) {
         while (aux->siguiente != NULL) {
             
             aux = aux->siguiente;
-            //printf("La condicion si entra hasta este punto %d\n",prueba);
+
         }
         aux2 = aux;
         nuevoIdent->anterior = aux2;
         
-        //printf("valor del PUNTO anterior %s, %d %d\n", aux2->cadena_ts,aux2->posTablaSimb,aux2->posValor);
-        //printf("valor del PUNTO nuevo %s, %d %d\n", nuevoIdent->cadena_ts,nuevoIdent->posTablaSimb,nuevoIdent->posValor);
+
         
         aux->siguiente = nuevoIdent;
     }
     
 }
-
+/*
+int yywrap() {
+    return 1;
+}
+*/
 void imprimeContenido(nodoL *inicio, int constanteValor) {
     nodoL *auxiliar  = inicio;
     while (auxiliar != NULL) {
         switch (constanteValor)
         {
-        case 0:
+        case IDENTIFICADORES:
             printf("Valor de identificador. %s, %d\n", auxiliar->datoU.identValorU.cadena_ts,auxiliar->datoU.identValorU.posValor);
             break;
-        case 1:
-            printf("Valor de cadena actual. %c, %d\n", auxiliar->datoU.carValorU.simbolo,auxiliar->datoU.carValorU.valor);
+        case CONSTANTE_NUMERICA_ENTERA:
+            printf("Valor en constantes enteras. %s, %d\n", auxiliar->datoU.entValorU.cadena,auxiliar->datoU.entValorU.valor);
             break;
-        case 2:
-            printf("Valor de cadena actual. %s, %d\n", auxiliar->datoU.opRelacioneslesU.cadena,auxiliar->datoU.opRelacioneslesU.valor);
+        case CONSTANTE_CADENA:
+            printf("Valor en constantes cadenas. %s, %d\n", auxiliar->datoU.cadValorU.cadena,auxiliar->datoU.cadValorU.valor);
             break;
-        case 3:
-            printf("Valor de cadena actual. %s, %d\n", auxiliar->datoU.asigValorU.cadena,auxiliar->datoU.asigValorU.valor);
+        case CONSTANTE_NUMERICA_REAL:
+            printf("Valor en constante real. %s, %d\n", auxiliar->datoU.realValorU.cadena,auxiliar->datoU.realValorU.valor);
             break;
-        case 4:
-            printf("Valor de cadena actual. %s, %d\n", auxiliar->datoU.palResU.cadena,auxiliar->datoU.palResU.valor);
-            break;
-        case 5:
-            printf("Valor de cadena actual. %c, %d\n", auxiliar->datoU.opAritU.simbolo,auxiliar->datoU.opAritU.valor);
-            break;
-        case 6:
-            printf("Valor de cadena actual. %s, %d\n", auxiliar->datoU.entValorU.cadena,auxiliar->datoU.entValorU.valor);
-            break;
-        case 7:
-            printf("Valor de cadena actual. %s, %d\n", auxiliar->datoU.cadValorU.cadena,auxiliar->datoU.cadValorU.valor);
-            break;
-        case 8:
-            printf("Valor de cadena actual. %c, %d\n", auxiliar->datoU.carValorU.simbolo,auxiliar->datoU.carValorU.valor);
-            break;
-        case 9:
-            printf("Valor de cadena actual. %s, %d\n", auxiliar->datoU.realValorU.cadena,auxiliar->datoU.realValorU.valor);
-            break;
-        
         default:
-            printf("No hay nada");
+            printf("Error al realizar busqueda de informacion");
             break;
         }
-        
-        
+        auxiliar = auxiliar->siguiente;
+    }
+
+    printf("\n");
+}
+
+/*
+identificadores numero  0
+simbolos especiales caracter 1 
+operador relacional numero 2
+operador asignacion numero 3
+palabra reservada numero 4
+operador aritmetico caracter 5
+constante numerica numero 6
+constante cadena numero 7
+caracte carácter 8
+constante real numero 9
+*/
+
+
+void imprimeContenidoTokens(nodoL *inicio) {
+    nodoL *auxiliar  = inicio;
+    int selector = 0;
+    while (auxiliar != NULL) {
+        selector = auxiliar->datoU.valToken.valT;
+        switch (selector)
+        {
+            //caso en el que se recibe como entrada un numero
+        case IDENTIFICADORES:
+        case OPERADORES_RELACIONALES:
+        case OPERADORES_ASIGNACION:
+        case PALABRA_RESERVADA:
+        case CONSTANTE_NUMERICA_ENTERA:
+        case CONSTANTE_CADENA:
+        case CONSTANTE_NUMERICA_REAL:
+            printf("Valor en tabla de tokens. %d, %d\n", auxiliar->datoU.valToken.infoToken.valEntero,auxiliar->datoU.valToken.valT);
+            break;
+        case SIMBOLOS_ESPECIALES:
+        case OPERADOR_ARITMETICOS:
+        case CONSTANTE_CARACTER:
+            printf("Valor en tabla de tokens. %c, %d\n", auxiliar->datoU.valToken.infoToken.valCaracter,auxiliar->datoU.valToken.valT);
+            break;
+        default:
+            printf("Error al realizar busqueda dentro de la tabla de tokens");
+            break;
+        }
         auxiliar = auxiliar->siguiente;
     }
 
@@ -240,18 +262,65 @@ void borrar(nodoL **inicio){
     }
 }
 
+int  busquedaTablasEstaticas(int tablaValor, char *cadena){
+    /*Asignaremos un valor distinto dependiendo del tamaño de la tabla el cual conoceremos por medio de su valor en la funcion*/
+    int i = 0; 
+    switch(tablaValor){
+        /*
+        case SIMBOLOS_ESPECIALES:
+
+            while(caracter != tablaSimbEsp[i].simbolo){
+                i++;
+            }
+            return tablaSimbEsp[i].valor;
+            break;
+        */
+        case OPERADORES_RELACIONALES:
+            while(strcmp(cadena ,tablaOpRelacionesles[i].cadena)){
+                //printf("Avnza while\n");
+                i++;
+            }
+            return tablaOpRelacionesles[i].valor;
+            break;
+        /*case OPERADORES_ASIGNACION:
+            //Ya que solo hay uno se le asigna 0
+            return 0;
+            break;
+*/
+        case PALABRA_RESERVADA:
+            while(strcmp(cadena ,tablaPalRes[i].cadena)){
+                //printf("Avnza while %s y %s \n", cadena, tablaPalRes[i].cadena);
+                i++;
+            }
+            //return i;
+            return tablaPalRes[i].valor;
+            break;
+            
+           /* 
+        case OPERADOR_ARITMETICOS:
+            while(caracter != tablaOpArit[i].simbolo){
+                i++;
+            }
+            return tablaSimbEsp[i].valor;
+            break;
+            */
+        default:
+            return -1;
+            break;
+
+    }
+    return -1;
+}
+
 void crearInformacion(int TablaT, nodoL** tablaTokens, nodoL** tablaIdentificadores, nodoL** tablaConstantesEnteras, nodoL** tablaCadenas, nodoL** tablaConstantesReales){
     union datos auxiliar;
     union datos tk;
-    /*Esto se quita*/
-    //char *yytext;
 
     switch (TablaT){
     case IDENTIFICADORES:
         auxiliar.identValorU.cadena_ts = strdup(yytext);
         auxiliar.identValorU.posValor = contadoresTIdentificador;
-        //Incrementa el valor para el nuevo elementro de la tabla
-        
+
         
         tk.valToken.valT = IDENTIFICADORES;
         
@@ -263,10 +332,7 @@ void crearInformacion(int TablaT, nodoL** tablaTokens, nodoL** tablaIdentificado
         insercion(tablaTokens, tk);
         break;
     case SIMBOLOS_ESPECIALES:
-    //Nota usamos la deficion de caracter ya que cuenta con la misma estructura
-        //auxiliar.especialValorU.valor = 1;
-        //auxiliar.especialValorU.simbolo = yytext;
-        
+
         tk.valToken.valT = SIMBOLOS_ESPECIALES;
         tk.valToken.infoToken.valCaracter = *yytext; //asignar indice
         
@@ -275,21 +341,18 @@ void crearInformacion(int TablaT, nodoL** tablaTokens, nodoL** tablaIdentificado
         insercion(tablaTokens, tk);
         break;
     case OPERADORES_RELACIONALES:
-        //auxiliar.opRelacioneslesU.valor = 2;
-        //auxiliar.opRelacioneslesU.cadena = yytext;
 
+        //printf("contenido de OPRelacional %s a\n", strdup(yytext));
         tk.valToken.valT = OPERADORES_RELACIONALES;
-        tk.valToken.infoToken.valEntero = -1; 
+        tk.valToken.infoToken.valEntero = busquedaTablasEstaticas(OPERADORES_RELACIONALES, strdup(yytext)); 
         /*
             implementar metodo de busqueda para asignar el valor
         */
-        //insercion(tablaOpRelacionesles, auxiliar);
+
         insercion(tablaTokens, tk);
         break;
     case OPERADORES_ASIGNACION:
-        
-        //auxiliar.asigValorU.valor = 3;
-        //auxiliar.asigValorU.cadena = yytext; 
+
         tk.valToken.valT = OPERADORES_ASIGNACION;
         tk.valToken.infoToken.valEntero = 0; //siempre sera 0 ya que es una tabla con un unico elemento
         
@@ -298,12 +361,9 @@ void crearInformacion(int TablaT, nodoL** tablaTokens, nodoL** tablaIdentificado
         break;
 
     case PALABRA_RESERVADA:
-
-        //auxiliar.asigValorU.valor = 4;
-        //auxiliar.asigValorU.cadena = yytext;
-        //insercion(tablaPalRes, auxiliar);
+        //printf("contenido de palabras reserbadas %d s\n", busquedaTablasEstaticas(PALABRA_RESERVADA, (strdup(yytext))));
         tk.valToken.valT = 4;
-        tk.valToken.infoToken.valEntero = -1; //asignar indice
+        tk.valToken.infoToken.valEntero = busquedaTablasEstaticas(PALABRA_RESERVADA, yytext);  //asignar indice
         /*
             implementar metodo de busqueda para asignar el valor
         */
@@ -326,7 +386,7 @@ void crearInformacion(int TablaT, nodoL** tablaTokens, nodoL** tablaIdentificado
         auxiliar.entValorU.valor = contadoresTNumEntero;
         contadoresTNumEntero++; //aumenta el valor para el siguiente valor de la tabla
         
-        auxiliar.entValorU.cadena = yytext;
+        auxiliar.entValorU.cadena = strdup(yytext);
 
         insercion(tablaConstantesEnteras, auxiliar);
         insercion(tablaTokens, tk);
@@ -339,18 +399,17 @@ void crearInformacion(int TablaT, nodoL** tablaTokens, nodoL** tablaIdentificado
         auxiliar.cadValorU.valor = contadoresTCadena;
         contadoresTCadena++;//aumenta el valor para el siguiente valor de la tabla
 
-        auxiliar.cadValorU.cadena = yytext;
+        auxiliar.cadValorU.cadena = strdup(yytext);
         insercion(tablaCadenas, auxiliar);
         insercion(tablaTokens, tk);
         break;
 
     case CONSTANTE_CARACTER:
         tk.valToken.valT = 8;
-        tk.valToken.infoToken.valCaracter = *yytext; //asignar indice
+        //printf("%c resultado de la funcion caracter\n", *(yytext+1));
+        tk.valToken.infoToken.valCaracter = *(yytext+1); //asignar indice
         
-        //auxiliar.carValorU.valor = 8;
-        //auxiliar.cadValorU.cadena = yytext;
-        //insercion(tablaCaracteres, auxiliar); no hay insercion ya que no existe tabla de este tipo 
+
         insercion(tablaTokens, tk);
         break;
 
@@ -360,7 +419,7 @@ void crearInformacion(int TablaT, nodoL** tablaTokens, nodoL** tablaIdentificado
         
         auxiliar.realValorU.valor = contadoresTNumReal;
         contadoresTNumReal++;
-        auxiliar.realValorU.cadena = yytext;
+        auxiliar.realValorU.cadena = strdup(yytext);
         insercion(tablaConstantesReales, auxiliar);
         insercion(tablaTokens, tk);
         break;
@@ -370,86 +429,84 @@ void crearInformacion(int TablaT, nodoL** tablaTokens, nodoL** tablaIdentificado
     }
 }
 
-main (int argc, char * argv[])
-{
+/*
+opAsignacion tablaOpAsig = {0,"->"};
+simbEspeciales tablaSimbEsp [8]= {{0,'('},{1,')'},{2,'{'},{3,'}'},{4,';'},{5,','},{6,'['},{7,']'}};
+opRelacionales tablaOpRelacionesles [6] = {{0,"=" },{1,"/=" },{2,">=" },{3,">" },{4,"<" },{5,"<=" }};
+operadoresAritmeticos tablaOpArit [5] = {{0,'+'},{1,'-'},{2,'*'},{3,'/'},{4,'%'}};
+palabrasReservadas tablaPalRes [11] ={{0,"ent"},{1,"finsi"},{2,"haz"},{3,"mientras"},{4,"large"},{5,"para"},{6,"real"},{7,"regresa"},{8,"si"},{9,"simb"},{10,"sino"}};
+*/
 
+
+
+main (int argc, char * argv[]){
     nodoL *tablaTokens = NULL;
     nodoL *tablaIdentificadores = NULL;
     nodoL *tablaConstantesEnteras = NULL;
     nodoL *tablaCadenas = NULL;
-    //nodoL *tablaCaracteres = NULL;
     nodoL *tablaConstantesReales = NULL;
+    int res,c;
+    yyin = fopen(argv[1],"r");
+    int aux;
+        
+    do{
+        res = yylex();
+        aux = res;
+        printf("%d es el valor de d\n", res);
+        crearInformacion(res, &tablaTokens,&tablaIdentificadores,&tablaConstantesEnteras,&tablaCadenas,&tablaConstantesReales);
+    }while(res);
 
-/*
-ESTO ES PARA ABRIR ARCHIVOS
+    imprimeContenido(tablaIdentificadores, IDENTIFICADORES);
+    imprimeContenido(tablaConstantesEnteras, CONSTANTE_NUMERICA_ENTERA);
+    imprimeContenido(tablaCadenas, CONSTANTE_CADENA);
+    imprimeContenido(tablaConstantesReales, CONSTANTE_NUMERICA_REAL);
+    
+    imprimeContenidoTokens(tablaTokens);
+   /* 
+    int a = busquedaTablasEstaticas(OPERADOR_ARITMETICOS, "",'+');
+    printf("%d es el resultado\n", a);
+    int b = busquedaTablasEstaticas(OPERADOR_ARITMETICOS, "-",'-');
+    printf("%d es el resultado\n", b);
+int c1 = busquedaTablasEstaticas(OPERADOR_ARITMETICOS, "*",'*');
+    printf("%d es el resultado\n", c1);
+int d = busquedaTablasEstaticas(OPERADOR_ARITMETICOS, "/",'/');
+    printf("%d es el resultado\n", d);
+int e = busquedaTablasEstaticas(OPERADOR_ARITMETICOS, " ",'%');
+    printf("%d es el resultado\n", e);
+
+    int a = busquedaTablasEstaticas(OPERADORES_RELACIONALES, "=",'+');
+    printf("%d es el resultado\n", a);
+    int b = busquedaTablasEstaticas(OPERADORES_RELACIONALES, "/=",'-');
+    printf("%d es el resultado\n", b);
+int c1 = busquedaTablasEstaticas(OPERADORES_RELACIONALES, ">=",'*');
+    printf("%d es el resultado\n", c1);
+int d = busquedaTablasEstaticas(OPERADORES_RELACIONALES, ">",'/');
+    printf("%d es el resultado\n", d);
+int e = busquedaTablasEstaticas(OPERADORES_RELACIONALES, "<",'%');
+    printf("%d es el resultado\n", e);
+    int f = busquedaTablasEstaticas(OPERADORES_RELACIONALES, "<=",'%');
+    printf("%d es el resultado\n", f);
+
+
+    int a = busquedaTablasEstaticas(SIMBOLOS_ESPECIALES, "=",'(');
+    printf("%d es el resultado\n", a);
+    int b = busquedaTablasEstaticas(SIMBOLOS_ESPECIALES, "/=",')');
+    printf("%d es el resultado\n", b);
+int c1 = busquedaTablasEstaticas(SIMBOLOS_ESPECIALES, ">=",'{');
+    printf("%d es el resultado\n", c1);
+int d = busquedaTablasEstaticas(SIMBOLOS_ESPECIALES, ">",'}');
+    printf("%d es el resultado\n", d);
+int e = busquedaTablasEstaticas(SIMBOLOS_ESPECIALES, "<",';');
+    printf("%d es el resultado\n", e);
+    int f = busquedaTablasEstaticas(SIMBOLOS_ESPECIALES, "<=",',');
+    printf("%d es el resultado\n", f);
+    int g = busquedaTablasEstaticas(SIMBOLOS_ESPECIALES, "<=",'[');
+    printf("%d es el resultado\n", g);
+    int h = busquedaTablasEstaticas(SIMBOLOS_ESPECIALES, "<=",']');
+    printf("%d es el resultado\n", h);
 */
 
-int res,c;
-yyin = fopen(argv[1],"r");
 
-//archSal = fopen("salida.txt","w");
-res = yylex();
-printf("%d \n", res);
-
-//fclose(archSal);
-while (!feof(yyin)) {
-    //crearInformacion(res,&tablaTokens,&tablaIdentificadores,&tablaConstantesEnteras,&tablaCadenas,&tablaConstantesReales);
-    res = yylex();
-   printf("%d \n", res);
-   printf("Resultado %d", c);
-}
-
-
-//fclose(argv[1]);/*
-//yyin = fopen(argv[1],"r");
-//int res = yylex();
-/*
-printf("%d \n", res);
-crearInformacion(0,&tablaTokens,&tablaIdentificadores,&tablaConstantesEnteras,&tablaCadenas,&tablaConstantesReales);
- res = yylex();
-crearInformacion(0,&tablaTokens,&tablaIdentificadores,&tablaConstantesEnteras,&tablaCadenas,&tablaConstantesReales);
- res = yylex();
-crearInformacion(0,&tablaTokens,&tablaIdentificadores,&tablaConstantesEnteras,&tablaCadenas,&tablaConstantesReales);
-res = yylex();
-crearInformacion(0,&tablaTokens,&tablaIdentificadores,&tablaConstantesEnteras,&tablaCadenas,&tablaConstantesReales);
-res = yylex();
-crearInformacion(0,&tablaTokens,&tablaIdentificadores,&tablaConstantesEnteras,&tablaCadenas,&tablaConstantesReales);
-    */
-//printf("Llegue a este punto");
-imprimeContenido(tablaIdentificadores, 0);
-fclose(yyin);
-
-//imprimeContenido(tablaConstantesEnteras, 6);
-//imprimeContenido(tablaConstantesReales, 9);
-//imprimeContenido(tablaCadenas, 7);
-
-/*
-    //Pruebas
-    nodoL *comienzo = NULL;
-    union datos prueba1;
-    consCar pruebas1 = {1,'a'};
-    prueba1.carValorU = pruebas1;
-    union datos prueba2;
-    consCar prubas2 = {2,'b'};
-    prueba2.carValorU = prubas2;
-
-    union datos prueba3;
-    consCar prubas3 = {3,'c'};
-    prueba3.carValorU = prubas3;
-
-    union datos prueba4;
-    consCar prubas4 = {4,'d'};
-    prueba4.carValorU = prubas4;
-
-    insercion(&comienzo, prueba1);
-    insercion(&comienzo, prueba2);
-    insercion(&comienzo, prueba3);
-    insercion(&comienzo, prueba4);
-    char resultado = comienzo->datoU.carValorU.valor;
-    
-    //borrar(&comienzo);
-    //free(comienzo);
-    */
+    //imprimeContenido(tablaSimbEsp,SIMBOLOS_ESPECIALES);
     return 0;
 }
-
